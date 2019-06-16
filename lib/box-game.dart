@@ -9,6 +9,7 @@ import 'package:audioplayers/audio_cache.dart';
 import 'package:ooidash/components/player/score.dart';
 import 'package:ooidash/controllers/enemy-controller.dart';
 import 'package:ooidash/controllers/item-controller.dart';
+import 'package:ooidash/controllers/ui-controller.dart';
 import 'package:ooidash/enums/game-enums.dart';
 import 'package:ooidash/global-vars.dart';
 
@@ -19,19 +20,26 @@ class BoxGame extends Game {
   List<double> bins;
   Random rnd = Random();
   Background background;
-  static AudioCache audioCache = AudioCache();
+  static AudioCache audioCache;
   Score currentScore;
 
   EnemyController enemyController;
   ItemController itemController;
+  UIController uiController;
 
   BoxGame() {
     initialize();
   }
 
   void initialize() async {
-//    audioCache.loop('audio/ooidashtheme2.mp3');
     resize(await Flame.util.initialDimensions());
+    initGameVariables();
+    uiController = UIController(this);
+  }
+
+  void initGameVariables() {
+//    audioCache = AudioCache();
+//    audioCache.loop('audio/ooidashtheme2.mp3');
     bins = createBins(3);
     player = MyPlayer(this);
     currentScore = player.playerScore;
@@ -58,6 +66,7 @@ class BoxGame extends Game {
     background.render(canvas);
     switch (GlobalVars.gameState) {
       case GameState.InMenu:
+        uiController.render(canvas);
         break;
       case GameState.Playing:
         enemyController.render(canvas);
@@ -65,8 +74,8 @@ class BoxGame extends Game {
         player.render(canvas);
         break;
       case GameState.GameOver:
-        initialize();
-        GlobalVars.gameState = GameState.Playing;
+        initGameVariables();
+        GlobalVars.gameState = GameState.InMenu;
         break;
     }
   }
@@ -74,6 +83,7 @@ class BoxGame extends Game {
   void update(double t) {
     switch (GlobalVars.gameState) {
       case GameState.InMenu:
+        uiController.update(t);
         break;
       case GameState.Playing:
         player.update(t);
@@ -93,11 +103,20 @@ class BoxGame extends Game {
   }
 
   void onTapDown(TapDownDetails d) {
-    double tapXCoord = d.globalPosition.dx;
-    if (tapXCoord < screenSize.width / 2) {
-      player.updatePlayerIndex(-1);
-    } else {
-      player.updatePlayerIndex(1);
+    switch (GlobalVars.gameState) {
+      case GameState.Playing:
+        double tapXCoord = d.globalPosition.dx;
+        if (tapXCoord < screenSize.width / 2) {
+          player.updatePlayerIndex(-1);
+        } else {
+          player.updatePlayerIndex(1);
+        }
+        break;
+      case GameState.InMenu:
+        uiController.handleTap(d);
+        break;
+      case GameState.GameOver:
+        break;
     }
   }
 }

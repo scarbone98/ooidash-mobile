@@ -4,11 +4,15 @@ import 'package:ooidash/box-game.dart';
 import 'package:ooidash/components/animated-object.dart';
 import 'package:ooidash/global-vars.dart';
 import 'package:ooidash/enums/game-enums.dart';
+import 'package:ooidash/components/player/player.dart';
 class EnemyController {
   BoxGame game;
   List<AnimatedObject> enemyObjects;
+  MyPlayer player;
+
   EnemyController(this.game) {
     enemyObjects = List<AnimatedObject>();
+    player = this.game.player;
   }
 
   void render(Canvas c) {
@@ -19,7 +23,7 @@ class EnemyController {
     generateEnemies();
     enemyObjects.forEach((AnimatedObject object) {
       object.update(t);
-      if (checkCrashed(game.player.playerRect, object.objectRect)) {
+      if (checkCrashed(player.playerRect, object.objectRect)) {
         GlobalVars.gameState = GameState.GameOver;
         print("GAME OVER");
       }

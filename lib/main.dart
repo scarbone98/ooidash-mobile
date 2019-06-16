@@ -17,7 +17,8 @@ void main() async {
     'mars.png',
     'moon.png',
     'background.png',
-    'diamond.png'
+    'diamond.png',
+    'Buttons.png'
   ]);
   await flameUtil.fullScreen();
   await flameUtil.setOrientation(DeviceOrientation.portraitUp);

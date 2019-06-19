@@ -1,5 +1,9 @@
 enum GameState {
   Playing,
   GameOver,
-  InMenu
+  Start
+}
+enum PlayerState {
+  Sword,
+  Regular
 }

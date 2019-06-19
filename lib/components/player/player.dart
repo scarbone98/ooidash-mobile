@@ -1,10 +1,9 @@
 import 'dart:ui';
-import 'dart:math';
 import 'package:ooidash/box-game.dart';
 import 'package:flame/sprite.dart';
-import 'package:sensors/sensors.dart';
 import 'package:ooidash/components/player/score.dart';
-import 'dart:async';
+import 'package:flutter_statusbar/flutter_statusbar.dart';
+import 'package:ooidash/enums/game-enums.dart';
 
 class MyPlayer {
   final BoxGame game;
@@ -18,26 +17,30 @@ class MyPlayer {
   double playerHeight;
   Score playerScore;
   int playerColumnIndex;
+  double playerTopPadding;
+  PlayerState playerState;
+  double playerItemTimer;
 
   MyPlayer(this.game) {
     playerWidth = game.tileSize * 1;
     playerHeight = game.tileSize * 1;
-    playerRect = Rect.fromLTWH((game.screenSize.width / 2) - playerWidth / 2, 10,
-        playerWidth, playerHeight);
-    playerPosition = Offset(0, 0);
+    playerRect =
+        Rect.fromLTWH((game.screenSize.width / 2) - playerWidth / 2, 10,
+            playerWidth, playerHeight);
     frames = List<Sprite>();
     frames.add(Sprite('oldmanterry1.png'));
     frames.add(Sprite('oldmanterry2.png'));
     speed = game.tileSize * 2;
     playerScore = Score(game);
+    playerScore.score = 0;
     playerColumnIndex = game.bins.length ~/ 2;
-    listenToRotation();
+    playerState = PlayerState.Regular;
+    playerItemTimer = 0;
+    initialize();
   }
 
-  void listenToRotation() async {
-    gyroscopeEvents.listen((GyroscopeEvent event) {
-      playerRotation += event.y;
-    });
+  void initialize() async {
+    playerTopPadding = await FlutterStatusbar.height;
   }
 
   void render(Canvas c) {
@@ -46,21 +49,31 @@ class MyPlayer {
   }
 
   void update(double t) {
+
+    //PLAYER SPRITE FRAMES LOGIC
     playerSpriteIndex += 5 * t;
     if (playerSpriteIndex >= frames.length) {
       playerSpriteIndex = 0;
     }
-    playerRect = Rect.fromLTWH(game.bins[playerColumnIndex] - (playerWidth / 2), 10,
+
+    // PLAYER ITEM LOGIC
+    if (PlayerState.Sword == playerState) {
+      playerItemTimer += t;
+      if (playerItemTimer > 7) {
+        playerItemTimer = 0;
+        playerState = PlayerState.Regular;
+      }
+    }
+
+    double padding;
+    if (playerTopPadding != null) {
+      padding = playerTopPadding;
+    } else {
+      padding = 10;
+    }
+    playerRect = Rect.fromLTWH(
+        game.bins[playerColumnIndex] - (playerWidth / 2), padding,
         playerWidth, playerHeight);
-//    double stepDistance = playerRotation * t * speed;
-//    if (playerRect.left + stepDistance <= 0) {
-//      stepDistance = -playerRect.left;
-//    }
-//    if (playerRect.right + stepDistance >= game.screenSize.width) {
-//      stepDistance = game.screenSize.width - playerRect.right;
-//    }
-//    Offset stepToTarget = Offset.fromDirection(0, stepDistance);
-//    playerRect = playerRect.shift(stepToTarget);
     playerScore.update(t);
   }
 

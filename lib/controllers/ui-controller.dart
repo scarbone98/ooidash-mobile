@@ -1,48 +1,26 @@
 import 'dart:ui';
 import 'package:ooidash/box-game.dart';
-import 'package:flame/sprite.dart';
 import 'package:ooidash/components/ui/button.dart';
 import 'package:flutter/gestures.dart';
-import 'package:ooidash/global-vars.dart';
-import 'package:ooidash/enums/game-enums.dart';
+import 'package:ooidash/components/ui/retry-screen.dart';
 
 class UIController {
   BoxGame game;
-  double screenWidth;
-  double screenHeight;
-  double tileSize;
-  List<Button> buttons;
-
+  RetryScreen retryScreen;
   UIController(this.game) {
-    screenWidth = game.screenSize.width;
-    screenHeight = game.screenSize.height;
-    tileSize = game.tileSize;
-    buttons = List<Button>();
-    for (int i = 0; i < 1; i++) {
-      buttons.add(
-        Button(
-            Sprite('Buttons.png', x: 1684, y: 2422, height: 190, width: 180),
-            Rect.fromLTWH(screenWidth/2 - (tileSize * 1), screenHeight/2 - (game.tileSize * 1), game.tileSize * 2, game.tileSize * 2),
-            () => GlobalVars.gameState = GameState.Playing
-        )
-      );
-    }
+    retryScreen = RetryScreen(game);
   }
 
   void render(Canvas c) {
-    buttons.forEach((Button b) => b.render(c));
+    retryScreen.render(c);
   }
 
   void update(double t) {
-
+    retryScreen.update(t);
   }
 
   void handleTap(TapDownDetails d) {
-    buttons.forEach((b) {
-      if(b.checkPressed(d)) {
-        b.onPress();
-      }
-    });
+    retryScreen.handleTap(d);
   }
 
 }

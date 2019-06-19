@@ -104,6 +104,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_statusbar:
+    dependency: "direct main"
+    description:
+      name: flutter_statusbar
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.0.1"
   flutter_svg:
     dependency: transitive
     description:
@@ -186,15 +193,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.2"
-  sensors:
+  shared_preferences:
     dependency: "direct main"
     description:
-      path: "packages/sensors"
-      ref: HEAD
-      resolved-ref: e0d67e9ebc5398e9a59bc8a16c13f8c7c4ab34be
-      url: "https://github.com/flutter/plugins"
-    source: git
-    version: "0.4.0+2"
+      name: shared_preferences
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.5.3+1"
   sky_engine:
     dependency: transitive
     description: flutter

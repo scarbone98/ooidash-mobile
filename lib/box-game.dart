@@ -12,6 +12,9 @@ import 'package:ooidash/controllers/item-controller.dart';
 import 'package:ooidash/controllers/ui-controller.dart';
 import 'package:ooidash/enums/game-enums.dart';
 import 'package:ooidash/global-vars.dart';
+import 'ai.dart';
+import 'singleton.dart';
+import 'ui-manager.dart';
 
 class BoxGame extends Game {
   Size screenSize;
@@ -22,37 +25,43 @@ class BoxGame extends Game {
   Background background;
   static AudioCache audioCache;
   Score currentScore;
-
+  static Score uiScore;
   EnemyController enemyController;
   ItemController itemController;
-  UIController uiController;
+//  UIController uiController;
+  AI ai;
+  UIManagerState uiManagerState;
 
   BoxGame() {
+    uiManagerState = Singleton.uiManager.state;
     initialize();
   }
 
   void initialize() async {
     resize(await Flame.util.initialDimensions());
     initGameVariables();
-    uiController = UIController(this);
+//    uiController = UIController(this);
+    background = Background(this);
   }
 
   void initGameVariables() {
 //    audioCache = AudioCache();
 //    audioCache.loop('audio/ooidashtheme2.mp3');
+    ai = AI(this);
     bins = createBins(3);
     player = MyPlayer(this);
     currentScore = player.playerScore;
+    uiScore = currentScore;
     enemyController = EnemyController(this);
     itemController = ItemController(this);
-    background = Background(this);
   }
 
   List<double> createBins(numBins) {
     double screenWidth = screenSize.width;
-    double stepSize = screenWidth / numBins;
+    int stepSize = screenWidth ~/ numBins;
     List<double> bins = List<double>();
-    for (int i = 0; i < screenWidth.toInt(); i += stepSize.toInt()) {
+    for (int i = 0; i < screenWidth.toInt(); i += stepSize) {
+      if (bins.length == numBins) break;
       bins.add(i + stepSize / 2);
     }
     double remaining = screenSize.width - bins.last;
@@ -65,8 +74,8 @@ class BoxGame extends Game {
   void render(Canvas canvas) {
     background.render(canvas);
     switch (GlobalVars.gameState) {
-      case GameState.InMenu:
-        uiController.render(canvas);
+      case GameState.Start:
+//        uiController.render(canvas);
         break;
       case GameState.Playing:
         enemyController.render(canvas);
@@ -74,31 +83,49 @@ class BoxGame extends Game {
         player.render(canvas);
         break;
       case GameState.GameOver:
-        initGameVariables();
-        GlobalVars.gameState = GameState.InMenu;
         break;
     }
   }
 
   void update(double t) {
+    background.update(t);
     switch (GlobalVars.gameState) {
-      case GameState.InMenu:
-        uiController.update(t);
+      case GameState.Start:
+//        uiController.update(t);
         break;
       case GameState.Playing:
+//        ai.reactionTimeCurrent += t;
+//        if (ai.reactionTimeCurrent >= ai.reactionRime) {
+//          ai.updatePlayerMove();
+//          ai.reactionTimeCurrent = 0;
+//        }
+        if (uiManagerState.currentScreen != UIScreens.playing) {
+          uiManagerState.currentScreen = UIScreens.playing;
+          uiManagerState.update();
+        }
         player.update(t);
-        enemyController.update(t);
         itemController.update(t);
-        background.update(t);
+        enemyController.update(t);
         break;
       case GameState.GameOver:
+        if (uiManagerState.currentScreen != UIScreens.gameOver) {
+          uiManagerState.score = player.playerScore.score.toInt().toString();
+          uiManagerState.currentScreen = UIScreens.gameOver;
+          uiManagerState.update();
+          print('GAME OVER');
+        }
+        initGameVariables();
+//        GlobalVars.gameState = GameState.InMenu;
         break;
     }
   }
 
   void resize(Size size) {
     screenSize = size;
+    GlobalVars.offScreenTargetTop = -(size.height * 0.3);
+    GlobalVars.offScreenTargetBottom = (size.height * 0.3);
     tileSize = size.width / 9.0;
+    GlobalVars.tileSize = tileSize;
     super.resize(size);
   }
 
@@ -112,8 +139,8 @@ class BoxGame extends Game {
           player.updatePlayerIndex(1);
         }
         break;
-      case GameState.InMenu:
-        uiController.handleTap(d);
+      case GameState.Start:
+//        uiController.handleTap(d);
         break;
       case GameState.GameOver:
         break;

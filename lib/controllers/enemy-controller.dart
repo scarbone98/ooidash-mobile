@@ -5,6 +5,10 @@ import 'package:ooidash/components/animated-object.dart';
 import 'package:ooidash/global-vars.dart';
 import 'package:ooidash/enums/game-enums.dart';
 import 'package:ooidash/components/player/player.dart';
+import 'package:ooidash/components/enemies/comet.dart';
+import 'package:ooidash/global-vars.dart';
+import 'package:ooidash/enums/game-enums.dart';
+
 class EnemyController {
   BoxGame game;
   List<AnimatedObject> enemyObjects;
@@ -24,8 +28,10 @@ class EnemyController {
     enemyObjects.forEach((AnimatedObject object) {
       object.update(t);
       if (checkCrashed(player.playerRect, object.objectRect)) {
-        GlobalVars.gameState = GameState.GameOver;
-        print("GAME OVER");
+        if (player.playerState == PlayerState.Regular) {
+          GlobalVars.playerEndScore = game.player.playerScore.score;
+          GlobalVars.gameState = GameState.GameOver;
+        }
       }
     });
     enemyObjects.removeWhere((AnimatedObject object) => object.isOffscreen);
@@ -33,15 +39,17 @@ class EnemyController {
 
 
   void generateEnemies() {
-    int numEnemiesToSpawn = (game.rnd.nextDouble() * 1).round() + 1;
+    double spacing = GlobalVars.spacingBetweenEnemySpawns;
+    int numEnemiesToSpawn = game.rnd.nextInt(game.bins.length);
+    if (numEnemiesToSpawn == 0) numEnemiesToSpawn = 1;
     if (enemyObjects.isEmpty) {
       enemyObjects = enemyObjects
         ..addAll(createEnemiesArray(numEnemiesToSpawn));
       GlobalVars.canSpawnItem = true;
     } else {
       Rect lastEnemyObjectRect = enemyObjects.last.objectRect;
-      if (lastEnemyObjectRect.bottom <=
-          game.screenSize.height - lastEnemyObjectRect.height * 2) {
+      if (lastEnemyObjectRect.top <=
+          game.screenSize.height + GlobalVars.offScreenTargetBottom - lastEnemyObjectRect.height * spacing) {
         enemyObjects = enemyObjects
           ..addAll(createEnemiesArray(numEnemiesToSpawn));
         GlobalVars.canSpawnItem = true;
@@ -51,11 +59,25 @@ class EnemyController {
 
   List<AnimatedObject> createEnemiesArray(int numEnemies) {
     List<AnimatedObject> enemies = List<AnimatedObject>();
+    List<double> binsClone = List<double>()..addAll(game.bins);
     for (int i = 0; i < numEnemies; i++) {
-      enemies.add(Meteor(
-          game,
-          game.bins[(game.rnd.nextDouble() * (game.bins.length - 1)).round()],
-          game.screenSize.height));
+      int randomInt = game.rnd.nextInt(binsClone.length);
+      if (game.player.playerScore.score > 2000) {
+        enemies.add(
+            Comet(
+            game,
+            binsClone[randomInt],
+            game.screenSize.height)
+        );
+      } else {
+        enemies.add(
+            Meteor(
+            game,
+            binsClone[randomInt],
+            game.screenSize.height)
+        );
+      }
+      binsClone.removeAt(randomInt);
     }
     return enemies;
   }

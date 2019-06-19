@@ -4,6 +4,8 @@ import 'package:ooidash/box-game.dart';
 import 'package:ooidash/components/animated-object.dart';
 import 'package:ooidash/global-vars.dart';
 import 'package:ooidash/controllers/enemy-controller.dart';
+import 'package:ooidash/components/items/sword.dart';
+import 'package:ooidash/enums/game-enums.dart';
 
 class ItemController {
   BoxGame game;
@@ -21,61 +23,66 @@ class ItemController {
 
   void update(double t) {
     generateItems();
+    bool isImmune = false;
     itemObjects.forEach((AnimatedObject object) {
-      object.update(t);
       if (checkCrashed(game.player.playerRect, object.objectRect)) {
-        game.currentScore.score += 50;
+        if (object is Gem) {
+          game.currentScore.score += 50;
+        } else if (object is Sword && game.player.playerState != PlayerState.Sword) {
+          isImmune = true;
+        }
       }
     });
-    itemObjects.removeWhere((AnimatedObject object) =>
-    object.isOffscreen ||
-        checkCrashed(game.player.playerRect, object.objectRect));
+    itemObjects.removeWhere((AnimatedObject object) {
+      if (object.isOffscreen) {
+        return true;
+      }
+      if (checkCrashed(game.player.playerRect, object.objectRect)) {
+        if (!(object is Sword)) {
+          return true;
+        } else if(PlayerState.Sword == game.player.playerState) {
+          return false;
+        } else {
+          return true;
+        }
+      }
+      return false;
+    });
+    if (isImmune) {
+      game.player.playerState = PlayerState.Sword;
+    }
+    itemObjects.forEach((AnimatedObject object) => object.update(t));
   }
 
   void generateItems() {
-    int numItemsToSpawn = game.rnd.nextInt(3);
+    int numItemsToSpawn = game.rnd.nextInt(game.bins.length);
+    double spacing = GlobalVars.spacingBetweenEnemySpawns;
+    if (enemyController.enemyObjects.isEmpty) return;
     Rect lastEnemyObjectRect = enemyController.enemyObjects.last.objectRect;
-    if (lastEnemyObjectRect.bottom <=
-        game.screenSize.height - lastEnemyObjectRect.height * 1 && GlobalVars.canSpawnItem) {
-      itemObjects = itemObjects
-        ..addAll(createItemsArray(numItemsToSpawn));
+    if (lastEnemyObjectRect.top <=
+            game.screenSize.height +
+                GlobalVars.offScreenTargetBottom -
+                (lastEnemyObjectRect.height * spacing / 2) &&
+        GlobalVars.canSpawnItem) {
+      itemObjects = itemObjects..addAll(createItemsArray(numItemsToSpawn));
       GlobalVars.canSpawnItem = false;
     }
-//    AnimatedObject lastObject = enemyObjects.last;
-//    List<AnimatedObject> itemsInLastRow = itemsObjects.where(
-//            (AnimatedObject o) =>
-//        o.objectRect.center.dy.toInt() ==
-//            lastObject.objectRect.center.dy.toInt()).toList();
-//    print(itemsInLastRow);
-//    if (itemsInLastRow.isNotEmpty) {
-//      return;
-//    }
-//    List<AnimatedObject> enemiesInLastRow = enemyObjects
-//        .where((AnimatedObject o) =>
-//            o.objectRect.center.dy == lastObject.objectRect.center.dy)
-//        .toList();
-//
-//    List<double> binsCopy = List<double>()..addAll(bins);
-//    for (AnimatedObject object in enemiesInLastRow) {
-//      binsCopy.removeWhere(
-//          (double val) => val.toInt() == object.objectRect.center.dx.toInt());
-//    }
-//    int numItemsToSpawn = (rnd.nextDouble() * (binsCopy.length - 1)).round();
-//    while (binsCopy.length != numItemsToSpawn) {
-//      int spawnIndex = (rnd.nextDouble() * (binsCopy.length - 1)).round();
-//      itemsObjects.add(Gem(
-//          this, binsCopy[spawnIndex], lastObject.objectRect.top + tileSize / 2));
-//      binsCopy.removeAt(spawnIndex);
-//    }
   }
 
   List<AnimatedObject> createItemsArray(int numItems) {
     List<AnimatedObject> items = List<AnimatedObject>();
+    List<double> binsClone = List<double>()..addAll(game.bins);
+    int spawnItemChance = game.rnd.nextInt(100);
+    if (spawnItemChance <= 5) {
+      int randomInt = game.rnd.nextInt(binsClone.length);
+      items.add(Sword(game, binsClone[randomInt], game.screenSize.height));
+      binsClone.removeAt(randomInt);
+      numItems--;
+    }
     for (int i = 0; i < numItems; i++) {
-      items.add(Gem(
-          game,
-          game.bins[(game.rnd.nextDouble() * (game.bins.length - 1)).round()],
-          game.screenSize.height));
+      int randomInt = game.rnd.nextInt(binsClone.length);
+      items.add(Gem(game, binsClone[randomInt], game.screenSize.height));
+      binsClone.removeAt(randomInt);
     }
     return items;
   }
